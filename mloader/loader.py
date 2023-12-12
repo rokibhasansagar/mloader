@@ -23,10 +23,10 @@ log = logging.getLogger()
 MangaList = Dict[int, Set[int]]  # Title ID: Set[Chapter ID]
 
 AUTH_PARAMS = {
-    "app_ver": "1.8.3",
-    "os": "ios",
-    "os_ver": "15.5",
-    "secret": "f40080bcb01a9a963912f46688d411a3",
+    "app_ver": "97",
+    "os": "android",
+    "os_ver": "25",
+    "secret": "d57128c0e0aef2df30af248b68827e9c",
 }
 
 
@@ -44,7 +44,7 @@ class MangaLoader:
         self.session = Session()
         self.session.headers.update(
             {
-                "User-Agent": "JumpPlus/1 CFNetwork/1333.0.4 Darwin/21.5.0",
+                "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 7.1.2; Primo RX5 Build/NJH47F",
             }
         )
 
@@ -55,6 +55,7 @@ class MangaLoader:
     def _load_pages(self, chapter_id: Union[str, int]) -> MangaViewer:
         resp = self.session.get(
             f"{self._api_url}/api/manga_viewer",
+            # Unused params => "ticket_reading": "no", "free_reading": "no", "subscription_reading": "no"
             params={
                 **AUTH_PARAMS,
                 "chapter_id": chapter_id,
@@ -67,7 +68,7 @@ class MangaLoader:
     @lru_cache(None)
     def _get_title_details(self, title_id: Union[str, int]) -> TitleDetailView:
         resp = self.session.get(
-            f"{self._api_url}/api/title_detailV2",
+            f"{self._api_url}/api/title_detailV3",
             params={
                 **AUTH_PARAMS,
                 "title_id": title_id,
