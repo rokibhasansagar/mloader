@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import Union, Optional
 from PIL import Image
 import io
+from datetime import date, datetime
 
 from mloader.constants import Language
 from mloader.response_pb2 import Title, Chapter
-from mloader.utils import escape_path, is_oneshot, chapter_name_to_int
+from mloader.utils import beautify_path, is_oneshot, chapter_name_to_int
 from mloader.__version__ import __title__, __version__
 
 
@@ -26,7 +27,7 @@ class ExporterBase(metaclass=ABCMeta):
     ):
         self.destination = destination
         self.add_chapter_title = add_chapter_title
-        self.title_name = escape_path(title.name).title()
+        self.title_name = beautify_path(title.name)
         self.is_oneshot = is_oneshot(chapter.name, chapter.sub_title)
         self.is_extra = self._is_extra(chapter.name)
 
@@ -36,11 +37,13 @@ class ExporterBase(metaclass=ABCMeta):
             self._extra_info.append("[Oneshot]")
 
         if self.add_chapter_title:
-            self._extra_info.append(f"[{escape_path(chapter.sub_title)}]")
+            if chapter.sub_title is not None:
+                self._extra_info.append(f"[{beautify_path(chapter.sub_title)}]")
 
         self._chapter_prefix = self._format_chapter_prefix(
             self.title_name,
             chapter.name,
+            chapter.start_timestamp,
             title.language,
             next_chapter and next_chapter.name,
         )
@@ -56,6 +59,7 @@ class ExporterBase(metaclass=ABCMeta):
         self,
         title_name: str,
         chapter_name: str,
+        start_timestamp: int,
         language: int,
         next_chapter_name: Optional[str] = None,
     ) -> str:
@@ -80,14 +84,17 @@ class ExporterBase(metaclass=ABCMeta):
                 prefix = "c" if chapter_num < 1000 else "d"
 
         if chapter_num is None:
-            chapter_num = escape_path(chapter_name)
+            chapter_num = beautify_path(chapter_name)
 
         components.append(f"{prefix}{chapter_num:0>3}{suffix}")
+        self.pub_year = datetime.fromtimestamp(start_timestamp).year
+        if self.pub_year <= datetime.today().year:
+            components.append(f"({self.pub_year})")
         components.append("(web)")
         return " ".join(components)
 
     def _format_chapter_suffix(self) -> str:
-        return " ".join(chain(self._extra_info, ["[Unknown]"]))
+        return " ".join(chain(self._extra_info, ["[fr3akyphantom]"]))
 
     def format_page_name(self, page: Union[int, range], ext=".jpg") -> str:
         if isinstance(page, range):
@@ -144,12 +151,13 @@ class CBZExporter(ExporterBase):
         super().__init__(*args, **kwargs)
         self.path = Path(self.destination, self.title_name)
         self.path.mkdir(parents=True, exist_ok=True)
-        self.path = self.path.joinpath(self.chapter_name).with_suffix(".cbz")
+        full_path = self.destination + "/" + self.title_name + "/" + self.chapter_name + ".cbz"
+        self.path = Path(full_path)
         self.skip_all_images = self.path.exists()
         # To avoid partially downloaded file
         self.archive_buffer = BytesIO()
         self.archive = zipfile.ZipFile(
-            self.archive_buffer, mode="w", compression=compression
+            self.archive_buffer, mode="w", compression=compression, compresslevel=9
         )
 
     def add_image(self, image_data: bytes, index: Union[int, range]):
@@ -175,7 +183,8 @@ class PDFExporter(ExporterBase):
         super().__init__(*args, **kwargs)
         self.path = Path(self.destination, self.title_name)
         self.path.mkdir(parents=True, exist_ok=True)
-        self.path = self.path.joinpath(self.chapter_name).with_suffix(".pdf")
+        full_path = self.destination + "/" + self.title_name + "/" + self.chapter_name + ".pdf"
+        self.path = Path(full_path)
         self.skip_all_images = self.path.exists()
         self.images = []
 

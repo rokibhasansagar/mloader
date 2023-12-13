@@ -18,5 +18,22 @@ def chapter_name_to_int(name: str) -> Optional[int]:
         return None
 
 
-def escape_path(path: str) -> str:
-    return re.sub(r"[^\w]+", " ", path).strip(string.punctuation + " ")
+# Capitalize Custom RegEx search result
+def bracket_match_capitalize(match):
+    return match.group(0).capitalize()
+
+
+def beautify_path(path: str) -> str:
+    # Remove/Replace some blacklisted characters
+    clean_str = re.sub(r'[~`!@$^*\\【】]', '', path).replace(': ', " - ").replace(':', "-").replace("/", " of ")
+    # Convert everything to list of items
+    clean_list = re.findall(r"([\S]+)+", clean_str, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+    result = []
+    for item in clean_list:
+        # Capitalize first characters inside enclosing brackets
+        item = re.sub(r'\((.*?)\)|\[(.*?)\]|\{(.*?)\}', bracket_match_capitalize, item)
+        # Capitalize word if has apostrophe, else make Title case
+        item = ' '.join(word.capitalize() if "'" in word else word.title() for word in item.split())
+        result.append(item)
+    # Put back the newly formatted items as string
+    return ' '.join(result)
