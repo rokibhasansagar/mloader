@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import namedtuple
 from functools import lru_cache
 from itertools import chain, count
@@ -155,6 +156,8 @@ class MangaLoader:
                     next_chapter if next_chapter.chapter_id != 0 else None
                 )
                 chapter_name = viewer.chapter_name
+                # Remove "Chapter xx: ","No.xx: "," NO.xx: " and such from the sub_title
+                chapter.sub_title = re.sub(r"^(Chapter [0-9]*[:;]) |^(No\.[0-9]*[:;]) |^(No\. [0-9]*[:;]) ", "", chapter.sub_title, flags=re.IGNORECASE)
                 log.info(
                     f"    {chapter_index}/{chapter_num}) "
                     f"Chapter {chapter_name}: {chapter.sub_title}"
