@@ -24,7 +24,7 @@ log = logging.getLogger()
 MangaList = Dict[int, Set[int]]  # Title ID: Set[Chapter ID]
 
 AUTH_PARAMS = {
-    "app_ver": "97",
+    "app_ver": "124",
     "os": "android",
     "os_ver": "25",
     "secret": "d57128c0e0aef2df30af248b68827e9c",
@@ -45,7 +45,7 @@ class MangaLoader:
         self.session = Session()
         self.session.headers.update(
             {
-                "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 7.1.2; Primo RX5 Build/NJH47F",
+                "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 7.1.2; Primo RX5 Build/NJH47F)",
             }
         )
 
